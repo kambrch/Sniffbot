@@ -71,6 +71,7 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
 
 ### Struktura projektu
 
+```
  .
 ├──  assets
 │   └──  slop_logo.png    -- tymczosowe logo z AI slopu
@@ -83,6 +84,7 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
 │   ├──  telegram.jl      -- obsługa komend i pętla bota
 │   └──  Sniffbot.jl      -- główny plik modułu
 ├──  .env                 -- plik z sekretami (patrz: .env_template)
+```````
 
 ## Format danych z urządzenia
 
