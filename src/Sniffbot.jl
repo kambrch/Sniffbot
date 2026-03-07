@@ -8,7 +8,7 @@ include("mqtt.jl")
 include("telegram.jl")
 
 function run()
-    DotEnv.load!()   # load .env into ENV before reading any variables
+    DotEnv.load!(; override=true)   # .env always wins over inherited shell vars
     START_TIME[] = now()  # record bot start time for /status uptime display
     retention_days = parse(Int, get(ENV, "LOG_RETENTION_DAYS", "30"))
     setup_logging(; retention_days)
