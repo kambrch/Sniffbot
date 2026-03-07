@@ -1,5 +1,6 @@
 module Sniffbot
 using Dates   # used by cache.jl
+using DotEnv
 
 include("cache.jl")
 include("logging.jl")
@@ -7,6 +8,7 @@ include("mqtt.jl")
 include("telegram.jl")
 
 function run()
+    DotEnv.config()  # load .env into ENV before reading any variables
     START_TIME[] = now()  # record bot start time for /status uptime display
     retention_days = parse(Int, get(ENV, "LOG_RETENTION_DAYS", "30"))
     setup_logging(; retention_days)

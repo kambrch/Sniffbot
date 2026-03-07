@@ -2,7 +2,7 @@
 
 julia_version = "1.12.5"
 manifest_format = "2.0"
-project_hash = "f864146d36d82e6a94ef8a4442aef2c03a623b13"
+project_hash = "bf954e1bf83dfd79d705b28765cfacf4f9fd8213"
 
 [[deps.Artifacts]]
 uuid = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
@@ -38,6 +38,12 @@ version = "1.11.0"
 deps = ["Random", "Serialization", "Sockets"]
 uuid = "8ba89e20-285c-5b6f-9357-94700520ee1b"
 version = "1.11.0"
+
+[[deps.DotEnv]]
+deps = ["PrecompileTools"]
+git-tree-sha1 = "92e88cb68a5b10545234f46dfaeb2fa8a8a50c45"
+uuid = "4dc1fcf4-5e3b-5448-94ab-0c38ec0385c1"
+version = "1.0.0"
 
 [[deps.ExceptionUnwrapping]]
 deps = ["Test"]
@@ -191,7 +197,7 @@ uuid = "777ac1f9-54b0-4bf8-805c-2214025038e7"
 version = "1.2.0"
 
 [[deps.Sniffbot]]
-deps = ["Dates", "JSON3", "LoggingExtras", "MQTTClient", "Telegrambot"]
+deps = ["Dates", "JSON3", "Logging", "LoggingExtras", "MQTTClient", "Telegrambot"]
 path = "."
 uuid = "ea4f7ab9-a7ef-4b59-9866-2483d6f9bbe7"
 version = "0.1.0"
