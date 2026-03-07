@@ -197,7 +197,7 @@ uuid = "777ac1f9-54b0-4bf8-805c-2214025038e7"
 version = "1.2.0"
 
 [[deps.Sniffbot]]
-deps = ["Dates", "JSON3", "Logging", "LoggingExtras", "MQTTClient", "Telegrambot"]
+deps = ["Dates", "DotEnv", "JSON3", "Logging", "LoggingExtras", "MQTTClient", "Telegrambot"]
 path = "."
 uuid = "ea4f7ab9-a7ef-4b59-9866-2483d6f9bbe7"
 version = "0.1.0"
