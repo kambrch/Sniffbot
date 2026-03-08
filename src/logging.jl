@@ -19,7 +19,7 @@ function format_log(io::IO, log)
 end
 
 function make_cleanup_callback(log_dir::String, retention_days::Int)
-    function (_::String)  # inner function is the implicit return value of the outer function
+    function (::String)  # inner function is the implicit return value of the outer function
         cutoff = today() - Day(retention_days)
         for fname in readdir(log_dir)
             m = match(r"sniffbot-(\d{4}-\d{2}-\d{2})\.log$", fname)

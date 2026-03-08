@@ -9,12 +9,12 @@ include("formatting.jl")
 
 const RATE_WINDOW = 60    # seconds
 const RATE_MAX    = 20    # requests per window per user
-const _rate_cache = Dict{Int, Vector{Float64}}()
+const rate_cache = Dict{Int, Vector{Float64}}()
 
 function rate_limited(chat_id::Int)::Bool
     now_ts = time()
     cutoff = now_ts - RATE_WINDOW
-    times  = get!(() -> Float64[], _rate_cache, chat_id)
+    times  = get!(() -> Float64[], rate_cache, chat_id)
     filter!(t -> t > cutoff, times)
     length(times) >= RATE_MAX && return true
     push!(times, now_ts)
@@ -86,4 +86,4 @@ function start_telegram(token::String, allowed_ids::Set{Int}=Set{Int}())
     end
 end
 
-end
+end # module TelegramLayer

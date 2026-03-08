@@ -59,4 +59,4 @@ function on_message(topic::String, raw::Vector{UInt8})
     end
 end
 
-end # module
+end # module MQTTLayer
