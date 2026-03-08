@@ -11,6 +11,7 @@ function start_mqtt(broker::String, port::Int, username::String, password::Strin
     while true
         try
             client, conn = MakeConnection(broker, port; user=User(username, password))
+            MQTT_STATE[] = :connecting
             connect(client, conn)
             @info "MQTT connected" broker topic
             MQTT_STATE[] = :connected  # mark connected after successful handshake
