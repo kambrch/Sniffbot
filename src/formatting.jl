@@ -147,7 +147,7 @@ const HELP_TEXT = """
 /pm10        — PM10
 
 ⚙ System
-/status      — MQTT state, last reading, uptime
+/status      — MQTT & DB state, last reading, uptime
 /start       — Show this message
 /help        — Show this message
 """

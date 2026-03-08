@@ -19,7 +19,8 @@ function start_storage(ch::Channel{SensorReading}, sensor_id::String, connstring
         try
             conn = LibPQ.Connection(connstring)
             DB_STATE[] = :connected
-            @info "DB connected" connstring
+            safe_connstring = replace(connstring, r":[^:@/]+@" => ":***@")
+            @info "DB connected" connection=safe_connstring
             delay = RECONNECT_DELAY_INITIAL
             while true
                 r = take!(ch)
@@ -31,7 +32,7 @@ function start_storage(ch::Channel{SensorReading}, sensor_id::String, connstring
             end
         catch e
             DB_STATE[] = :error
-            @error "DB error, reconnecting in $(delay)s" exception=(e, catch_backtrace())
+            @error "DB error, reconnecting in $(delay)s — 1 reading may be lost" exception=(e, catch_backtrace())
             conn !== nothing && close(conn)
         end
         sleep(delay)
