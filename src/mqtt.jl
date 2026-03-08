@@ -6,7 +6,8 @@ import ..CACHE, ..SensorReading, ..BME280Data, ..PMS5003Data, ..MQTT_STATE
 const RECONNECT_DELAY_INITIAL = 5    # seconds
 const RECONNECT_DELAY_MAX     = 300  # 5 minutes
 
-function start_mqtt(broker::String, port::Int, username::String, password::String, topic::String)
+function start_mqtt(broker::String, port::Int, username::String, password::String,
+                    topic::String, ch::Channel{SensorReading})
     delay = RECONNECT_DELAY_INITIAL
     while true
         try
@@ -15,7 +16,7 @@ function start_mqtt(broker::String, port::Int, username::String, password::Strin
             connect(client, conn)
             @info "MQTT connected" broker topic
             MQTT_STATE[] = :connected  # mark connected after successful handshake
-            subscribe(client, topic, on_message; qos=QOS_0)
+            subscribe(client, topic, (t, raw) -> on_message(t, raw, ch); qos=QOS_0)
             delay = RECONNECT_DELAY_INITIAL  # reset backoff after a successful connect
             fetch(client)                    # blocks until broker disconnects
             @warn "MQTT connection lost"
@@ -43,7 +44,7 @@ function valid_reading(b::BME280Data, p::PMS5003Data)::Bool
     return true
 end
 
-function on_message(topic::String, raw::Vector{UInt8})
+function on_message(topic::String, raw::Vector{UInt8}, ch::Channel{SensorReading})
     try
         data = JSON3.read(String(raw))
         b = data.BME280
@@ -52,7 +53,14 @@ function on_message(topic::String, raw::Vector{UInt8})
         pms = PMS5003Data(p.PM1, p[Symbol("PM2.5")], p.PM10)
         valid_reading(bme, pms) || return  # short-circuit early exit on invalid data
         received_at = now()
-        CACHE[] = SensorReading(bme, pms, received_at)
+        reading = SensorReading(bme, pms, received_at)
+        CACHE[] = reading
+        # Push to storage channel; drop if full (>40 min DB outage)
+        if isopen(ch) && Base.n_avail(ch) < ch.sz_max
+            put!(ch, reading)
+        elseif isopen(ch)
+            @warn "Storage channel full — dropping reading (DB likely down >40 min)"
+        end
         @info "Sensor reading cached" received_at
     catch e
         @error "Failed to parse MQTT payload" exception=(e, catch_backtrace())
