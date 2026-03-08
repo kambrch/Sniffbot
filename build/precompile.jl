@@ -10,7 +10,9 @@ using Dates
 const PAYLOAD = Vector{UInt8}("""{"Time":"2026-03-08T12:00:00","BME280":{"Temperature":20.7,"Humidity":24.4,"DewPoint":-0.4,"Pressure":1013.4},"PMS5003":{"CF1":22,"CF2.5":32,"CF10":49,"PM1":22,"PM2.5":32,"PM10":49,"PB0.3":4146,"PB0.5":934,"PB1":153,"PB2.5":48,"PB5":8,"PB10":2},"PressureUnit":"hPa","TempUnit":"C"}""")
 
 Sniffbot.setup_logging(tempdir(); retention_days=1)
-Sniffbot.MQTTLayer.on_message("test/topic", PAYLOAD)
+let ch = Channel{Sniffbot.SensorReading}(10)
+    Sniffbot.MQTTLayer.on_message("test/topic", PAYLOAD, ch)
+end
 
 # Exercise all formatters with a cached reading
 const TL = Sniffbot.TelegramLayer
@@ -32,10 +34,12 @@ if !isnothing(r)
     TL.stale_suffix(r)
 end
 
-# Exercise status formatting for all MQTT states
+# Exercise status formatting for all MQTT × DB states
 for state in (:connected, :connecting, :disconnected)
-    TL.format_status(state, Sniffbot.CACHE[], Sniffbot.START_TIME[])
-    TL.format_status(state, nothing,           Sniffbot.START_TIME[])
+    for db_state in (:connected, :disconnected, :error)
+        TL.format_status(state, db_state, Sniffbot.CACHE[], Sniffbot.START_TIME[])
+        TL.format_status(state, db_state, nothing, Sniffbot.START_TIME[])
+    end
 end
 
 # Exercise age_string across time ranges
