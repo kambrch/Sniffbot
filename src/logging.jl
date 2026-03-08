@@ -13,7 +13,7 @@ function format_log(io::IO, log)
     print(io, ts, " [", level, "] ", log.message)
     for (k, v) in log.kwargs
         if k === :exception && v isa Tuple
-            print(io, " | exception=", sprint(showerror, first(v)))
+            print(io, " | exception=", sprint(showerror, v...))
         else
             print(io, " | ", k, "=", v)
         end
