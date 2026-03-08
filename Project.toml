@@ -13,6 +13,12 @@ LoggingExtras = "e6f89c97-d47a-5376-807f-9c37f3926c36"
 MQTTClient = "985f35cc-2c3d-4943-b8c1-f0931d5f0959"
 Telegrambot = "accb34f3-11fe-547f-b953-62fd05adad84"
 
+[extras]
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[targets]
+test = ["Test"]
+
 [compat]
 DotEnv = "1"
 JSON3 = "1.14"

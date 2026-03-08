@@ -26,3 +26,6 @@ const MQTT_STATE = Ref{Symbol}(:disconnected)
 
 # Bot start time — initialized at module load; reset to now() at run() entry for accurate uptime
 const START_TIME = Ref{DateTime}(now())
+
+# DB connection state — updated by StorageLayer
+const DB_STATE = Ref{Symbol}(:disconnected)

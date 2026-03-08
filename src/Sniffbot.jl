@@ -1,5 +1,14 @@
 module Sniffbot
 export run
+export parse_sensor_id
+
+# Extract device identifier from Tasmota MQTT topic.
+# "tele/tasmota_F847F7/SENSOR"  →  "tasmota_F847F7"
+# Falls back to the full topic string if format is unexpected.
+function parse_sensor_id(topic::String)::String
+    parts = split(topic, '/')
+    length(parts) >= 2 ? String(parts[2]) : topic
+end
 
 using Dates   # used by cache.jl
 using DotEnv
