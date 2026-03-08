@@ -5,13 +5,34 @@ import ..CACHE, ..BME280Data, ..PMS5003Data, ..SensorReading, ..MQTT_STATE, ..ST
 
 include("formatting.jl")
 
+# Rate limiting
+
+const RATE_WINDOW = 60    # seconds
+const RATE_MAX    = 20    # requests per window per user
+const _rate_cache = Dict{Int, Vector{Float64}}()
+
+function rate_limited(chat_id::Int)::Bool
+    now_ts = time()
+    cutoff = now_ts - RATE_WINDOW
+    times  = get!(() -> Float64[], _rate_cache, chat_id)
+    filter!(t -> t > cutoff, times)
+    length(times) >= RATE_MAX && return true
+    push!(times, now_ts)
+    false
+end
+
 # Bot wiring
 
 function make_handler(f::Function, allowed_ids::Set{Int})
     return function (param, msg)
-        if !isempty(allowed_ids) && msg["chat"]["id"] ∉ allowed_ids
-            @warn "Unauthorized access attempt" chat_id=msg["chat"]["id"]
+        chat_id = msg["chat"]["id"]
+        if isempty(allowed_ids) || chat_id ∉ allowed_ids
+            @warn "Unauthorized access attempt" chat_id
             return "Unauthorized."
+        end
+        if rate_limited(chat_id)
+            @warn "Rate limit exceeded" chat_id
+            return "⚠ Too many requests — slow down."
         end
         try
             f(param, msg)
@@ -47,7 +68,7 @@ function start_telegram(token::String, allowed_ids::Set{Int}=Set{Int}())
     )
 
     if isempty(allowed_ids)
-        @warn "TELEGRAM_ALLOWED_IDS empty — bot open to all users"
+        @warn "TELEGRAM_ALLOWED_IDS not set — all requests will be denied"
     end
 
     delay = 5
