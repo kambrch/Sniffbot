@@ -45,8 +45,7 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
  │  cache.jl — shared state                                    │
  │  ├── CACHE       :: Ref{Union{Nothing,SensorReading}}       │
  │  ├── MQTT_STATE  :: Ref{Symbol}                             │
- │  ├── START_TIME  :: Ref{DateTime}                           │
- │  └── LOG_DIR     :: String                                  │
+ │  └── START_TIME  :: Ref{DateTime}                           │
  │                                                             │
  │  logging.jl                                                 │
  │  └── setup_logging()                                        │
@@ -62,8 +61,8 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
  │  │  SensorReading   │   │  start_telegram()               │ │
  │  └──────────────────┘   │                                 │ │
  │                         │  imports: CACHE, MQTT_STATE,    │ │
- │                         │  START_TIME, LOG_DIR,           │ │
- │                         │  SensorReading, BME280Data,     │ │
+ │                         │  START_TIME, SensorReading,     │ │
+ │                         │  BME280Data,                    │ │
  │                         │  PMS5003Data                    │ │
  │                         └─────────────────────────────────┘ │
  └─────────────────────────────────────────────────────────────┘
@@ -116,6 +115,26 @@ Bot subskrybuje temat MQTT i buforuje ostatni odczyt. Komendy odczytują dane z 
 
 - **/status** — Stan MQTT, ostatni odczyt, czas pracy
 - **/help** — Wyświetla pomoc
+
+## Konfiguracja
+
+**Wymagania:** Julia ≥ 1.9
+
+Zainstaluj zależności:
+
+```bash
+julia --project -e 'using Pkg; Pkg.instantiate()'
+```
+
+Utwórz plik `.env` na podstawie szablonu i uzupełnij sekrety:
+
+```bash
+cp .env_template .env
+$EDITOR .env
+```
+
+Wymagane zmienne: `MQTT_USERNAME`, `MQTT_PASSWORD`, `MQTT_TOPIC`, `TELEGRAM_TOKEN`, `TELEGRAM_ALLOWED_IDS`.
+`TELEGRAM_ALLOWED_IDS` musi zawierać co najmniej jeden identyfikator czatu — pusta wartość blokuje wszystkich użytkowników.
 
 ## Uruchomienie
 
