@@ -56,11 +56,26 @@ function run()
         Set{Int}(ids)
     end
 
-    # Outer supervisor: restarts start_mqtt if it somehow exits the inner loop.
-    # Under normal operation the inner while-true never exits; this is defense-in-depth.
+    sensor_id  = get(ENV, "SENSOR_ID", parse_sensor_id(topic))
+    connstring = get(ENV, "PG_CONNSTRING", "postgresql:///sniffbot")
+
+    storage_ch = Channel{SensorReading}(512)  # ~40 min buffer at 5s publish interval
+
+    # Storage task — outer supervisor matches MQTT pattern
+    storage_task = @async while true
+        try
+            StorageLayer.start_storage(storage_ch, sensor_id, connstring)
+        catch e
+            @error "Storage supervisor: task exited, restarting in 10s" exception=(e, catch_backtrace())
+            sleep(10)
+        end
+    end
+    errormonitor(storage_task)
+
+    # MQTT task — pass storage channel
     mqtt_task = @async while true
         try
-            MQTTLayer.start_mqtt(broker, port, username, password, topic)
+            MQTTLayer.start_mqtt(broker, port, username, password, topic, storage_ch)
         catch e
             @error "MQTT supervisor: task exited unexpectedly, restarting in 10s" exception=(e, catch_backtrace())
             sleep(10)
@@ -68,7 +83,7 @@ function run()
     end
     errormonitor(mqtt_task)
 
-    TelegramLayer.start_telegram(token, allowed_ids)   # blocks in long-poll loop
+    TelegramLayer.start_telegram(token, allowed_ids)
 end
 
 end # module Sniffbot
