@@ -18,6 +18,7 @@ include("cache.jl")
 include("logging.jl")
 include("mqtt.jl")
 include("telegram.jl")
+include("storage.jl")
 
 function require_env(key::String)::String
     haskey(ENV, key) || error("Required env var $key is not set")
