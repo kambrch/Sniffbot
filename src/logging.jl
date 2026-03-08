@@ -1,8 +1,5 @@
 using Logging, LoggingExtras, Dates
 
-# Absolute path so the log dir is stable regardless of CWD at launch
-const LOG_DIR = joinpath(@__DIR__, "..", "logs")  # @__DIR__ expands to the directory of this file at parse time
-
 # Daily rotation: sniffbot-yyyy-mm-dd.log
 # Only `s` needs escaping — it is a DateFormat code (milliseconds); all other letters are literals
 const LOG_PATTERN = "\\sniffbot-yyyy-mm-dd.log"
@@ -34,14 +31,14 @@ function make_cleanup_callback(log_dir::String, retention_days::Int)
     end
 end
 
-function setup_logging(; retention_days::Int=30)
-    mkpath(LOG_DIR)
-    cleanup = make_cleanup_callback(LOG_DIR, retention_days)
-    file_logger = DatetimeRotatingFileLogger(format_log, LOG_DIR, LOG_PATTERN; rotation_callback=cleanup)
+function setup_logging(log_dir::String; retention_days::Int=30)
+    mkpath(log_dir)
+    cleanup = make_cleanup_callback(log_dir, retention_days)
+    file_logger = DatetimeRotatingFileLogger(format_log, log_dir, LOG_PATTERN; rotation_callback=cleanup)
     logger = TeeLogger(
         MinLevelLogger(FormatLogger(format_log, stderr), Logging.Info),
         MinLevelLogger(file_logger, Logging.Info),
     )
     global_logger(logger)
-    @info "Logging initialized" log_dir=LOG_DIR retention_days=retention_days
+    @info "Logging initialized" log_dir retention_days
 end

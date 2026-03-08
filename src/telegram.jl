@@ -1,7 +1,7 @@
 module TelegramLayer
 
 using Telegrambot, Dates
-import ..CACHE, ..BME280Data, ..PMS5003Data, ..SensorReading, ..MQTT_STATE, ..START_TIME, ..LOG_DIR
+import ..CACHE, ..BME280Data, ..PMS5003Data, ..SensorReading, ..MQTT_STATE, ..START_TIME
 
 include("formatting.jl")
 
