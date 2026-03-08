@@ -56,7 +56,7 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
  │  │                  │   │  ┌─────────────────────────┐    │ │
  │  │  start_mqtt()    │   │  │ formatting.jl (included) │   │ │
  │  │                  │   │  │ format_*, with_cache,    │   │ │
- │  │  imports:        │   │  │ read_logs, HELP_TEXT     │   │ │
+ │  │  imports:        │   │  │ HELP_TEXT                │   │ │
  │  │  CACHE           │   │  └─────────────────────────┘    │ │
  │  │  MQTT_STATE      │   │                                 │ │
  │  │  SensorReading   │   │  start_telegram()               │ │
@@ -115,8 +115,31 @@ Bot subskrybuje temat MQTT i buforuje ostatni odczyt. Komendy odczytują dane z 
 ### System
 
 - **/status** — Stan MQTT, ostatni odczyt, czas pracy
-- **/logs [N]** — Ostatnie N ostrzeżeń/błędów (domyślnie 20)
 - **/help** — Wyświetla pomoc
+
+## Uruchomienie
+
+### Standardowe
+
+```bash
+julia -e 'using Sniffbot; Sniffbot.run()'
+```
+
+### Z sysimage (eliminuje opóźnienie przy pierwszym zapytaniu)
+
+Jednorazowe zbudowanie obrazu (kilka minut):
+
+```bash
+julia --project=build build/build_sysimage.jl
+```
+
+Uruchomienie z obrazem:
+
+```bash
+julia --sysimage sniffbot.so -e 'using Sniffbot; Sniffbot.run()'
+```
+
+Obraz wymaga przebudowania po każdej zmianie kodu źródłowego.
 
 ## Pomysły na przyszłość 
 - Utrzymywanie historycznych wyników w lekkiej bazie danych 
