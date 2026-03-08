@@ -1,4 +1,6 @@
 module Sniffbot
+export run
+
 using Dates   # used by cache.jl
 using DotEnv
 

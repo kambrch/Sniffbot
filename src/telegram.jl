@@ -23,7 +23,7 @@ end
 
 # Bot wiring
 
-function make_handler(f::Function, allowed_ids::Set{Int})
+function make_handler(f, allowed_ids::Set{Int})
     return function (param, msg)
         chat_id = msg["chat"]["id"]
         if isempty(allowed_ids) || chat_id ∉ allowed_ids

@@ -40,8 +40,6 @@ format_reply(::Val{:dew_point}, b::BME280Data) =
 format_reply(::Val{:pressure}, b::BME280Data) =
     metric_row("Pressure", b.pressure, "hPa")
 
-format_reply(p::PMS5003Data) = format_pm(p)
-
 format_reply(p::PMS5003Data, field::Symbol) = format_reply(Val(field), p)
 
 format_reply(::Val{:pm1}, p::PMS5003Data) =
@@ -118,7 +116,7 @@ function stale_suffix(r::SensorReading)::String
     "\n\n⚠ Stale data: last update $(mins) min ago."
 end
 
-function with_cache(f::Function)::String
+function with_cache(f)::String
     r = CACHE[]
     isnothing(r) && return "No reading yet — sensor hasn't reported."
     f(r) * stale_suffix(r)
