@@ -21,18 +21,29 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
  │    Tasmota     │                         │   Telegram    │
  │ BME280+PMS5003 │                         │     user      │
  └───────┬────────┘                         └──────┬────────┘
-         │ MQTT publish                   /command │   ▲ 
+         │ MQTT publish                   /command │   ▲
          ▼                                         ▼   │ reply
  ┌────────────────┐                         ┌────────────────┐
  │    mqtt.jl     │                         │  telegram.jl   │
  │                │                         │                │
- └───────┬────────┘                         └───────┬────────┘
-         │ write        ┌────────────┐         read │
-         └────────────► │  cache.jl  │ ◄────────────┘
-                        │    Ref     │
-                        └────────────┘
+ └───┬────────┬───┘                         └───────┬────────┘
+     │ write  │ put!     ┌────────────┐        read │
+     │        │          │  cache.jl  │ ◄───────────┘
+     │        │          │    Ref     │
+     │        │          └────────────┘
+     │        │
+     │        ▼
+     │ ┌─────────────────────┐
+     │ │ Channel{SensorReading}│  (~40 min bufor)
+     │ └──────────┬──────────┘
+     │            ▼
+     │ ┌────────────────┐
+     │ │  storage.jl    │──► TimescaleDB
+     │ └────────────────┘
+     │
+     └──────────────────────────────────────────────────────►
 
- @async (mqtt.jl) — scheduler Julli zarządza odpytywaniem API telegrama i nasłuchiwaniem MQTT
+ @async (mqtt.jl) — scheduler Julii zarządza odpytywaniem API telegrama i nasłuchiwaniem MQTT
  logging.jl — przekrojowe (wszystkie warstwy)
 ```
 
@@ -45,6 +56,7 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
  │  cache.jl — shared state                                    │
  │  ├── CACHE       :: Ref{Union{Nothing,SensorReading}}       │
  │  ├── MQTT_STATE  :: Ref{Symbol}                             │
+ │  ├── DB_STATE    :: Ref{Symbol}                             │
  │  └── START_TIME  :: Ref{DateTime}                           │
  │                                                             │
  │  logging.jl                                                 │
@@ -61,10 +73,16 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
  │  │  SensorReading   │   │  start_telegram()               │ │
  │  └──────────────────┘   │                                 │ │
  │                         │  imports: CACHE, MQTT_STATE,    │ │
- │                         │  START_TIME, SensorReading,     │ │
- │                         │  BME280Data,                    │ │
- │                         │  PMS5003Data                    │ │
- │                         └─────────────────────────────────┘ │
+ │  ┌──────────────────┐   │  DB_STATE, START_TIME,          │ │
+ │  │ module           │   │  SensorReading, BME280Data,     │ │
+ │  │ StorageLayer     │   │  PMS5003Data                    │ │
+ │  │                  │   └─────────────────────────────────┘ │
+ │  │  start_storage() │                                       │
+ │  │                  │                                       │
+ │  │  imports:        │                                       │
+ │  │  SensorReading   │                                       │
+ │  │  DB_STATE        │                                       │
+ │  └──────────────────┘                                       │
  └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -80,8 +98,14 @@ buforaot lelegramowy do serwowania pomiarów z węszącego sensora nad śmietnik
 │   ├──  logging.jl       -- logowanie (revolting logs)
 │   ├──  mqtt.jl          -- warstwa integracji z MQTT
 │   ├──  formatting.jl    -- formatowanie wyjścia bota
+│   ├──  storage.jl       -- zapis do TimescaleDB (asynchroniczny)
 │   ├──  telegram.jl      -- obsługa komend i pętla bota
 │   └──  Sniffbot.jl      -- główny plik modułu
+├── 󰣞 deploy
+│   ├──  sniffbot.service      -- systemd (Linux)
+│   ├──  com.sniffbot.plist    -- launchd (macOS)
+│   └── 󰆼 timescaledb
+│       └──  001_initial.sql  -- migracja bazy danych
 ├──  .env                 -- plik z sekretami (patrz: .env_template)
 ```````
 
@@ -113,7 +137,7 @@ Bot subskrybuje temat MQTT i buforuje ostatni odczyt. Komendy odczytują dane z 
 
 ### System
 
-- **/status** — Stan MQTT, ostatni odczyt, czas pracy
+- **/status** — Stan MQTT i DB, ostatni odczyt, czas pracy
 - **/help** — Wyświetla pomoc
 
 ## Konfiguracja
@@ -135,6 +159,8 @@ $EDITOR .env
 
 Wymagane zmienne: `MQTT_USERNAME`, `MQTT_PASSWORD`, `MQTT_TOPIC`, `TELEGRAM_TOKEN`, `TELEGRAM_ALLOWED_IDS`.
 `TELEGRAM_ALLOWED_IDS` musi zawierać co najmniej jeden identyfikator czatu — pusta wartość blokuje wszystkich użytkowników.
+
+Opcjonalne zmienne dla TimescaleDB: `PG_CONNSTRING` (domyślnie `postgresql:///sniffbot` — gniazdo Unix), `SENSOR_ID` (domyślnie: parsowane z `MQTT_TOPIC`).
 
 ## Uruchomienie
 
@@ -160,6 +186,19 @@ julia --sysimage sniffbot.so -e 'using Sniffbot; Sniffbot.run()'
 
 Obraz wymaga przebudowania po każdej zmianie kodu źródłowego.
 
+## TimescaleDB (opcjonalne)
+
+Zapis historycznych odczytów do bazy TimescaleDB. Wymaga zainstalowanego TimescaleDB.
+
+Utwórz bazę i zastosuj migrację:
+
+```bash
+createdb sniffbot
+psql sniffbot -f deploy/timescaledb/001_initial.sql
+```
+
+Bot automatycznie łączy się z bazą przy starcie (przez gniazdo Unix, uwierzytelnianie peer — bez hasła). Schemat: tabela `sensor_readings`, kompresja po 7 dniach, retencja 2 lata. Bez bazy danych bot działa normalnie — tylko zapis historycznych danych jest niedostępny.
+
 ## Wdrożenie (unattended)
 
 Gotowe pliki serwisów w katalogu `deploy/`:
@@ -183,7 +222,3 @@ launchctl load ~/Library/LaunchAgents/com.sniffbot.plist
 
 Oba warianty automatycznie restartują proces po awarii i uruchamiają go przy starcie systemu.
 
-## Pomysły na przyszłość 
-- Utrzymywanie historycznych wyników w lekkiej bazie danych 
-- Odpytywanie tych danych
-- Rysowanie wykresów z tych danych
