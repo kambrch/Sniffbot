@@ -15,7 +15,7 @@ function age_string(dt::DateTime)::String
     return "$(h)h $(m)min ago"
 end
 
-metric_row(label, value, unit="") = begin
+function metric_row(label, value, unit="")
     name = rpad(label, COL_WIDTH)
     isempty(unit) ? "$name $value" : "$name $value $unit"
 end
