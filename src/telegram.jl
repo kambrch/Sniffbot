@@ -13,7 +13,12 @@ function make_handler(f::Function, allowed_ids::Set{Int})
             @warn "Unauthorized access attempt" chat_id=msg["chat"]["id"]
             return "Unauthorized."
         end
-        f(param, msg)
+        try
+            f(param, msg)
+        catch e
+            @error "Handler error" exception=(e, catch_backtrace())
+            return "⚠ Error: $(typeof(e))"
+        end
     end
 end
 
@@ -46,8 +51,19 @@ function start_telegram(token::String, allowed_ids::Set{Int}=Set{Int}())
         @warn "TELEGRAM_ALLOWED_IDS empty — bot open to all users"
     end
 
-    @info "Telegram bot starting"
-    startBot(token; textHandle=handlers)
+    delay = 5
+    while true
+        try
+            @info "Telegram bot starting"
+            startBot(token; textHandle=handlers)
+            @warn "Telegram polling loop exited unexpectedly"
+        catch e
+            @error "Telegram bot error" exception=(e, catch_backtrace())
+        end
+        @info "Restarting Telegram bot in $(delay)s…"
+        sleep(delay)
+        delay = min(delay * 2, 300)
+    end
 end
 
 end
