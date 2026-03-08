@@ -81,6 +81,7 @@ function format_all(r::SensorReading)::String
 end
 
 function format_status(mqtt_state::Symbol,
+                       db_state::Symbol,
                        reading::Union{Nothing,SensorReading},
                        start_time::DateTime)::String
 
@@ -88,10 +89,15 @@ function format_status(mqtt_state::Symbol,
     mins = Dates.value(elapsed) ÷ 60_000
     uptime = "$(mins ÷ 60)h $(mins % 60)min"
 
-    icon =
+    mqtt_icon =
         mqtt_state === :connected  ? "🟢" :
         mqtt_state === :connecting ? "🟡" :
         "🔴"
+
+    db_icon =
+        db_state === :connected ? "🟢" :
+        db_state === :error     ? "🔴" :
+        "🟡"                          # :disconnected — not yet tried
 
     last =
         isnothing(reading) ?
@@ -99,8 +105,9 @@ function format_status(mqtt_state::Symbol,
         "$(timestamp(reading.received_at)) ($(age_string(reading.received_at)))"
 
     rows = [
-        metric_row("MQTT", "$icon $mqtt_state"),
-        metric_row("Last", last),
+        metric_row("MQTT",   "$mqtt_icon $mqtt_state"),
+        metric_row("DB",     "$db_icon $db_state"),
+        metric_row("Last",   last),
         metric_row("Uptime", uptime),
     ]
 

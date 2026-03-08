@@ -1,7 +1,7 @@
 module TelegramLayer
 
 using Telegrambot, Dates
-import ..CACHE, ..BME280Data, ..PMS5003Data, ..SensorReading, ..MQTT_STATE, ..START_TIME
+import ..CACHE, ..BME280Data, ..PMS5003Data, ..SensorReading, ..MQTT_STATE, ..START_TIME, ..DB_STATE
 
 include("formatting.jl")
 
@@ -64,7 +64,7 @@ function start_telegram(token::String, allowed_ids::Set{Int}=Set{Int}())
         "env"         => h((_, _) -> with_cache(format_env)),
         "all"         => h((_, _) -> with_cache(format_all)),
 
-        "status"      => h((_, _) -> format_status(MQTT_STATE[], CACHE[], START_TIME[])),
+        "status"      => h((_, _) -> format_status(MQTT_STATE[], DB_STATE[], CACHE[], START_TIME[])),
     )
 
     if isempty(allowed_ids)
