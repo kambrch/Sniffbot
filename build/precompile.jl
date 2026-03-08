@@ -9,6 +9,7 @@ using Dates
 # Simulate an MQTT payload to compile JSON parsing + struct construction
 const PAYLOAD = Vector{UInt8}("""{"Time":"2026-03-08T12:00:00","BME280":{"Temperature":20.7,"Humidity":24.4,"DewPoint":-0.4,"Pressure":1013.4},"PMS5003":{"CF1":22,"CF2.5":32,"CF10":49,"PM1":22,"PM2.5":32,"PM10":49,"PB0.3":4146,"PB0.5":934,"PB1":153,"PB2.5":48,"PB5":8,"PB10":2},"PressureUnit":"hPa","TempUnit":"C"}""")
 
+Sniffbot.setup_logging(tempdir(); retention_days=1)
 Sniffbot.MQTTLayer.on_message("test/topic", PAYLOAD)
 
 # Exercise all formatters with a cached reading

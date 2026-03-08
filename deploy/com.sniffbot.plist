@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd service for Sniffbot — macOS deployment (Mac mini)
+
+  Setup:
+    1. Copy this file to ~/Library/LaunchAgents/com.sniffbot.plist
+       (or /Library/LaunchDaemons/ to run as root on boot)
+    2. Edit WorkingDirectory and ProgramArguments to match your installation path
+    3. launchctl load ~/Library/LaunchAgents/com.sniffbot.plist
+
+  Logs:
+    tail -f /opt/sniffbot/logs/*.log    # structured log file
+    tail -f /opt/sniffbot/logs/stderr.log
+
+  To unload:
+    launchctl unload ~/Library/LaunchAgents/com.sniffbot.plist
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sniffbot</string>
+
+    <!-- Without sysimage:
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/julia</string>
+        <string>-e</string>
+        <string>using Sniffbot; Sniffbot.run()</string>
+    </array>
+    -->
+
+    <!-- With sysimage (recommended — build with: julia &#45;&#45;project=build build/build_sysimage.jl) -->
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/julia</string>
+        <string>--sysimage</string>
+        <string>/opt/sniffbot/sniffbot.so</string>
+        <string>-e</string>
+        <string>using Sniffbot; Sniffbot.run()</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/opt/sniffbot</string>
+
+    <!-- Restart the process on exit -->
+    <key>KeepAlive</key>
+    <true/>
+
+    <!-- Start automatically on login/boot -->
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <!-- Single-threaded — the codebase uses unsynchronised shared state (Ref, Dict) -->
+        <key>JULIA_NUM_THREADS</key>
+        <string>1</string>
+        <!-- Override log directory if needed -->
+        <!-- <key>SNIFFBOT_LOG_DIR</key> -->
+        <!-- <string>/var/log/sniffbot</string> -->
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/opt/sniffbot/logs/stdout.log</string>
+    <key>StandardErrorPath</key>
+    <string>/opt/sniffbot/logs/stderr.log</string>
+</dict>
+</plist>

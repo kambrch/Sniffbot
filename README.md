@@ -141,6 +141,29 @@ julia --sysimage sniffbot.so -e 'using Sniffbot; Sniffbot.run()'
 
 Obraz wymaga przebudowania po każdej zmianie kodu źródłowego.
 
+## Wdrożenie (unattended)
+
+Gotowe pliki serwisów w katalogu `deploy/`:
+
+### Linux (systemd)
+
+```bash
+sudo cp deploy/sniffbot.service /etc/systemd/system/
+# Edytuj WorkingDirectory i ExecStart w pliku
+sudo systemctl daemon-reload
+sudo systemctl enable --now sniffbot
+```
+
+### macOS (launchd)
+
+```bash
+cp deploy/com.sniffbot.plist ~/Library/LaunchAgents/
+# Edytuj WorkingDirectory i ProgramArguments w pliku
+launchctl load ~/Library/LaunchAgents/com.sniffbot.plist
+```
+
+Oba warianty automatycznie restartują proces po awarii i uruchamiają go przy starcie systemu.
+
 ## Pomysły na przyszłość 
 - Utrzymywanie historycznych wyników w lekkiej bazie danych 
 - Odpytywanie tych danych

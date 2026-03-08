@@ -1,0 +1,46 @@
+# systemd service for Sniffbot — Linux deployment
+#
+# Setup:
+#   1. Copy this file to /etc/systemd/system/sniffbot.service
+#   2. Edit WorkingDirectory and ExecStart to match your installation path
+#   3. sudo systemctl daemon-reload
+#   4. sudo systemctl enable --now sniffbot
+#
+# Logs:
+#   journalctl -u sniffbot -f          # live stderr
+#   tail -f /opt/sniffbot/logs/*.log   # structured log file
+
+[Unit]
+Description=Sniffbot — Telegram sensor bot
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=sniffbot
+Group=sniffbot
+
+WorkingDirectory=/opt/sniffbot
+
+# Without sysimage (slower startup, higher first-request latency):
+#ExecStart=/usr/local/bin/julia -e 'using Sniffbot; Sniffbot.run()'
+
+# With sysimage (recommended — build with: julia --project=build build/build_sysimage.jl):
+ExecStart=/usr/local/bin/julia --sysimage /opt/sniffbot/sniffbot.so -e 'using Sniffbot; Sniffbot.run()'
+
+# Restart the process on any exit (crash, OOM, signal)
+Restart=always
+RestartSec=10
+StartLimitIntervalSec=0  # disable rate-limiting of restart attempts
+
+# Single-threaded — the codebase uses unsynchronised shared state (Ref, Dict)
+Environment=JULIA_NUM_THREADS=1
+
+# Log directory — defaults to WorkingDirectory/logs if unset
+# Environment=SNIFFBOT_LOG_DIR=/var/log/sniffbot
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
