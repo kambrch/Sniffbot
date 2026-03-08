@@ -1,0 +1,9 @@
+[deps]
+PackageCompiler = "9b87118b-4619-50d2-8e1e-99f35a4d4d9d"
+Sniffbot = "ea4f7ab9-a7ef-4b59-9866-2483d6f9bbe7"
+
+[sources]
+Sniffbot = {path = ".."}
+
+[compat]
+PackageCompiler = "2"
