@@ -7,6 +7,11 @@ include("logging.jl")
 include("mqtt.jl")
 include("telegram.jl")
 
+function require_env(key::String)::String
+    haskey(ENV, key) || error("Required env var $key is not set")
+    ENV[key]
+end
+
 function run()
     DotEnv.load!(; override=true)   # .env always wins over inherited shell vars
     START_TIME[] = now()  # record bot start time for /status uptime display
@@ -20,10 +25,10 @@ function run()
         isnothing(v) && error("MQTT_PORT must be an integer")
         v
     end
-    username    = ENV["MQTT_USERNAME"]
-    password    = ENV["MQTT_PASSWORD"]
-    topic       = ENV["MQTT_TOPIC"]
-    token       = ENV["TELEGRAM_TOKEN"]
+    username    = require_env("MQTT_USERNAME")
+    password    = require_env("MQTT_PASSWORD")
+    topic       = require_env("MQTT_TOPIC")
+    token       = require_env("TELEGRAM_TOKEN")
     allowed_ids = Set{Int}(                                              # generator expression with filter:
         parse(Int, strip(id)) for id in split(get(ENV, "TELEGRAM_ALLOWED_IDS", ""), ",")
         if !isempty(strip(id))                                           # (expr for x in iter if cond) — lazy, no intermediate array
