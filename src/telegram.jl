@@ -44,7 +44,6 @@ function start_telegram(token::String, allowed_ids::Set{Int}=Set{Int}())
         "all"         => h((_, _) -> with_cache(format_all)),
 
         "status"      => h((_, _) -> format_status(MQTT_STATE[], CACHE[], START_TIME[])),
-        "logs"        => h((param, _) -> read_logs(param)),
     )
 
     if isempty(allowed_ids)

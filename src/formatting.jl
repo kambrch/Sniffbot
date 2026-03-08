@@ -109,40 +109,6 @@ function format_status(mqtt_state::Symbol,
     pre_block("⚙ System", rows)
 end
 
-# Logs
-
-strip_source_path(line::String) =
-    replace(line, r" @ \S+:\d+$" => "")
-
-function filter_log_lines(lines::Vector{String}, n::Int)::Vector{String}
-    filtered = filter(l -> occursin("[Warn", l) || occursin("[Error", l), lines)
-    strip_source_path.(last(filtered, n))
-end
-
-function read_logs(param::String)::String
-    n = something(tryparse(Int, strip(param)), 20)
-
-    logfile = joinpath(LOG_DIR, Dates.format(today(), "sniffbot-yyyy-mm-dd.log"))
-    isfile(logfile) || return "No log entries for today."
-
-    try
-        lines = readlines(logfile)
-        matched = filter_log_lines(lines, n)
-
-        isempty(matched) && return "No warnings or errors today."
-
-        result = join(matched, "\n")
-
-        length(result) > 4000 ?
-            "<pre>" * first(result,4000) * "\n…(truncated)</pre>" :
-            "<pre>$result</pre>"
-
-    catch e
-        @error "Failed to read log file" exception=(e, catch_backtrace())
-        "Log file unavailable."
-    end
-end
-
 # Cache freshness
 
 function stale_suffix(r::SensorReading)::String
@@ -177,6 +143,6 @@ const HELP_TEXT = """
 
 ⚙ System
 /status      — MQTT state, last reading, uptime
-/logs [N]    — Last N warnings/errors
+/start       — Show this message
 /help        — Show this message
 """
