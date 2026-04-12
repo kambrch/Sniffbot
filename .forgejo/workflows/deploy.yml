@@ -1,0 +1,46 @@
+name: Build and deploy SniffBot
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: docker
+    steps:
+      - name: Install tools
+        run: apk add --no-cache git docker-cli
+
+      - name: Checkout
+        run: git clone ${{ github.server_url }}/${{ github.repository }} . && git checkout ${{ github.sha }}
+
+      - name: Log in to container registry
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login git.kambr.pl -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+      - name: Build and push
+        run: |
+          docker build \
+            -t git.kambr.pl/kamash/sniffbot:latest \
+            -t git.kambr.pl/kamash/sniffbot:${{ github.sha }} \
+            .
+          docker push git.kambr.pl/kamash/sniffbot:latest
+          docker push git.kambr.pl/kamash/sniffbot:${{ github.sha }}
+
+  deploy:
+    runs-on: docker
+    needs: build
+    volumes:
+      - /srv/sniffbot:/srv/sniffbot
+    steps:
+      - name: Install tools
+        run: apk add --no-cache docker-cli docker-cli-compose
+
+      - name: Log in to container registry
+        run: echo "${{ secrets.REGISTRY_TOKEN }}" | docker login git.kambr.pl -u "${{ secrets.REGISTRY_USER }}" --password-stdin
+
+      - name: Pull new image
+        run: docker compose -f /srv/sniffbot/docker-compose.yml pull sniffbot
+
+      - name: Restart sniffbot container
+        run: docker compose -f /srv/sniffbot/docker-compose.yml up -d sniffbot
