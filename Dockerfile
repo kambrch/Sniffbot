@@ -2,7 +2,7 @@ FROM julia:1.12-bookworm AS builder
 
 WORKDIR /build
 COPY Project.toml Manifest.toml ./
-RUN julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.precompile(; strict=false)'
+RUN julia --project -e 'using Pkg; Pkg.instantiate()'
 COPY src/ src/
 RUN julia --project -e 'using Pkg; Pkg.precompile()'
 
