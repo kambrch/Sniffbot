@@ -10,6 +10,7 @@ FROM julia:1.12-bookworm
 
 WORKDIR /opt/sniffbot
 COPY --from=builder /build /opt/sniffbot
+COPY --from=builder /root/.julia /root/.julia
 RUN mkdir -p logs
 
 CMD ["julia", "--project", "-e", "using Sniffbot; Sniffbot.run()"]
